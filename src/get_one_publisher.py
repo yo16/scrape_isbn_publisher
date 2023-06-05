@@ -2,10 +2,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 # ISBNの出版者検索ページ
 URL_TARGET = "https://isbn.jpo.or.jp/index.php/fix__ref_pub/"
+
+
+# 本当にないらしいときの例外
+class MyNotFound(Exception):
+    pass
 
 
 def get_one_publisher(pub_code):
@@ -39,13 +44,17 @@ def get_one_publisher(pub_code):
             By.XPATH,
             "/html/body/section[2]/div/div/div/div/form[1]/p/input[5]"
         ).click()
-        WebDriverWait(
-            driver, 30
-        ).until(
-            EC.presence_of_element_located(
-                (By.ID, "tblp1")
+        try:
+            WebDriverWait(
+                driver, 20
+            ).until(
+                EC.presence_of_element_located(
+                    (By.ID, "tblp1")
+                )
             )
-        )
+        except TimeoutException:
+            # tblp1が現れないときは、本当にない
+            raise MyNotFound
 
         # 結果テーブルから"pub_code"を探す
         found = False
@@ -61,8 +70,37 @@ def get_one_publisher(pub_code):
                     f'#tblp1 tr.sheet[id="{pub_code}"] td:first-child'
                 )
             except NoSuchElementException:
-                print("not found...")
+                # カンマ区切りで２つ以上設定してるとき、idに設定されていないことがある
                 pass
+                
+            # まだ見つかっていない場合、trを１つずつ見ていく
+            if td is None:
+                trs = driver.find_elements(
+                    By.CSS_SELECTOR,
+                    "#tblp1 tr.sheet"
+                )
+                for tr in trs:
+                    td_code = tr.find_element(
+                        By.CSS_SELECTOR,
+                        "td:nth-child(2)"   # 1から始まる
+                    )
+                    codes = td_code.text
+                    codes_ary = codes.split(",")
+                    for c in codes_ary:
+                        c_chomped = c.replace(" ","")
+                        if (c_chomped == pub_code):
+                            # 見つけた！
+                            td_name = tr.find_element(
+                                By.CSS_SELECTOR,
+                                "td:nth-child(1)"   # 1から始まる
+                            )
+                            found = True
+                            found_publisher = td_name.text
+                            continue    # for
+                    if found:
+                        continue    # for
+                if found:
+                    continue    # while
 
             if td:
                 found = True
@@ -102,6 +140,9 @@ def get_one_publisher(pub_code):
                 found_publisher = "ERROR: Loop 10 count"
             
             print(f"ループ page:{page_no}")
+
+    except MyNotFound:
+        pass
 
     finally:
         # ブラウザを終了
