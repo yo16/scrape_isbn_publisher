@@ -1,9 +1,9 @@
 
-from get_isbn_publisher import get_isbn_publisher
+from get_publishers import get_publishers
 
 
 def main():
-    a = get_isbn_publisher()
+    a = get_publishers()
     #print(a)
 
 

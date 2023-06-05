@@ -29,3 +29,16 @@ ISBNの出版者情報を抽出する
       - 9 + 7*3 + 8 + 4*3 + 0 + 4*3 + 8 + 9*3 + 5 + 0*3 + 4 + 8*3 = 130
       - 10 - 0 = 10（10の場合は0）
 
+----
+# WSL2のSeleniumを実行する手順
+1. WSL2を起動
+2. dockerサービスを起動
+   1. `$ sudo service docker start`
+3. docker-seleniumを起動
+   1. `$ docker run -d -p 4444:4444 -p 7900:7900 --shm-size="2g" selenium/standalone-chrome:latest`
+4. http://localhost:4444 にアクセス
+
+
+# 参考
+- [Seleniumクイックリファレンス](https://www.seleniumqref.com/)
+- 
