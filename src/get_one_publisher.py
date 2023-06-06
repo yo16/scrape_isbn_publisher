@@ -105,7 +105,7 @@ def get_one_publisher(pub_code):
                             found_publisher = publisher_name
                         else:
                             # 違ってても、せっかく検索したので戻り値に返してDBに入れる
-                            ret_ary.append((pub_code, publisher_name))
+                            ret_ary.append((c_chomped, publisher_name))
 
                 if found:
                     continue    # while

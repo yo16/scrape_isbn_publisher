@@ -76,10 +76,15 @@ def get_publishers():
                                 f"INSERT INTO pub values({i[0]}, NULL)"
                             )
                         else:
-                            cur.execute(
-                                "INSERT INTO pub values(?,?)",
-                                i
-                            )
+                            try:
+                                cur.execute(
+                                    "INSERT INTO pub values(?,?)",
+                                    i
+                                )
+                            except sqlite3.IntegrityError:
+                                # 複数の記号が登録されているときについでに登録した場合、
+                                # 登録済みのことがあるので、スルーする
+                                print("already exists pub_code:{i[0]}, pub_name:{i[1]}")
                 
                 else:
                     # あるなら表示
