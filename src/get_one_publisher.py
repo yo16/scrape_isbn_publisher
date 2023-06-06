@@ -133,9 +133,10 @@ def get_one_publisher(pub_code):
                 
             if (next_button.get_attribute("class") == "next_disabled"):
                 # 使用不可になっていたら次はない
-                # まだ見つかっていないのでエラー
-                found = True
-                found_publisher = f"ERROR: Not Found(until page:{page_no})"
+                # 番号から出版社名がヒットするが、記号にはない、というケースがある
+                found = True    # Trueじゃないけど抜けるために入れる
+                found_publisher = None
+                continue
             
             # 押して、次のページになるまで待つ
             next_button.click()
