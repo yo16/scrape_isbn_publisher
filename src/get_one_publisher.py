@@ -15,6 +15,7 @@ class MyNotFound(Exception):
 
 def get_one_publisher(pub_code):
     print(f"pub_code: {pub_code}")
+    ret_ary = []
 
     # Chrome のオプションを設定する
     options = webdriver.ChromeOptions()
@@ -24,6 +25,7 @@ def get_one_publisher(pub_code):
     })
 
     driver = None
+    found_publisher = None
     try:
         # Seleniumに接続
         driver = webdriver.Remote(
@@ -59,7 +61,6 @@ def get_one_publisher(pub_code):
         # 結果テーブルから"pub_code"を探す
         found = False
         page_no = 0
-        found_publisher = ""
         while not found:
             page_no += 1
 
@@ -71,6 +72,7 @@ def get_one_publisher(pub_code):
                 )
             except NoSuchElementException:
                 # カンマ区切りで２つ以上設定してるとき、idに設定されていないことがある
+                print("NoSuchElementException !!")
                 pass
                 
             # まだ見つかっていない場合、trを１つずつ見ていく
@@ -80,6 +82,14 @@ def get_one_publisher(pub_code):
                     "#tblp1 tr.sheet"
                 )
                 for tr in trs:
+                    # publisher_name
+                    td_name = tr.find_element(
+                        By.CSS_SELECTOR,
+                        "td:nth-child(1)"   # 1から始まる
+                    )
+                    publisher_name = td_name.text
+
+                    # publisher_code
                     td_code = tr.find_element(
                         By.CSS_SELECTOR,
                         "td:nth-child(2)"   # 1から始まる
@@ -88,17 +98,15 @@ def get_one_publisher(pub_code):
                     codes_ary = codes.split(",")
                     for c in codes_ary:
                         c_chomped = c.replace(" ","")
+
                         if (c_chomped == pub_code):
                             # 見つけた！
-                            td_name = tr.find_element(
-                                By.CSS_SELECTOR,
-                                "td:nth-child(1)"   # 1から始まる
-                            )
                             found = True
-                            found_publisher = td_name.text
-                            continue    # for
-                    if found:
-                        continue    # for
+                            found_publisher = publisher_name
+                        else:
+                            # 違ってても、せっかく検索したので戻り値に返してDBに入れる
+                            ret_ary.append((pub_code, publisher_name))
+
                 if found:
                     continue    # while
 
@@ -110,10 +118,19 @@ def get_one_publisher(pub_code):
             # 見つからなかったので、次へボタンを押す
 
             # 次へボタンを探す
-            next_button = driver.find_element(
-                By.XPATH,
-                '//*[@id="pubListform"]/table[1]/tbody/tr/td/input[2]'
-            )
+            try:
+                next_button = driver.find_element(
+                    By.XPATH,
+                    '//*[@id="pubListform"]/table[1]/tbody/tr/td/input[2]'
+                )
+            except NoSuchElementException:
+                # Nextが見つからない場合は本当にない
+                # 何度も"ない"ということを探してしまうので、Nullで登録しておく
+                print("NoSuchElementException !!(2)")
+                found = True    # Trueじゃないけど抜けるために入れる
+                found_publisher = None
+                continue
+                
             if (next_button.get_attribute("class") == "next_disabled"):
                 # 使用不可になっていたら次はない
                 # まだ見つかっていないのでエラー
@@ -150,5 +167,6 @@ def get_one_publisher(pub_code):
             driver.quit()
 
     print(f"pub_code: {pub_code} -> {found_publisher}")
-    return found_publisher
+    ret_ary.append((pub_code, found_publisher))
+    return ret_ary
 

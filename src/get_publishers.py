@@ -41,7 +41,7 @@ def get_publishers():
     # DB接続
     with sqlite3.connect("pub_code.db", isolation_level=None) as conn:  # 自動commit
         cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS pub(pub_code, pub_name)")
+        cur.execute("CREATE TABLE IF NOT EXISTS pub(pub_code VARCHAR(10) NOT NULL PRIMARY KEY, pub_name VARCHAR(100))")
 
         for kse in pub_no_list:
             keta = kse["keta"]
@@ -59,20 +59,27 @@ def get_publishers():
 
                 # なければ取得
                 if rec is None:
-                    # cur_pub_noに対応するpublisher名を取得
-                    publisher = get_one_publisher(cur_pub_no)
-                    print(f"{cur_pub_no}: {publisher}")
-
-                    # ランダムで5～10秒待つ
+                    # ランダムで5～15秒待つ
                     time.sleep(
-                        5.0 + 5*random.random()
+                        5.0 + 10*random.random()
                     )
 
+                    # cur_pub_noに対応するpublisher名を取得
+                    pub_info = get_one_publisher(cur_pub_no)
+                    
                     # DBへ格納
-                    cur.execute(
-                        "INSERT INTO pub values(?,?)",
-                        (cur_pub_no, publisher)
-                    )
+                    # 複数一気に入れられるけど、Noneがあるとできないので
+                    # １行ずつ入れる
+                    for i in pub_info:
+                        if i[1] is None:
+                            cur.execute(
+                                f"INSERT INTO pub values({i[0]}, NULL)"
+                            )
+                        else:
+                            cur.execute(
+                                "INSERT INTO pub values(?,?)",
+                                i
+                            )
                 
                 else:
                     # あるなら表示
