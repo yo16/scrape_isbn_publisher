@@ -84,7 +84,7 @@ def get_publishers():
                             except sqlite3.IntegrityError:
                                 # 複数の記号が登録されているときについでに登録した場合、
                                 # 登録済みのことがあるので、スルーする
-                                print("already exists pub_code:{i[0]}, pub_name:{i[1]}")
+                                print(f"already exists pub_code:{i[0]}, pub_name:{i[1]}")
                 
                 else:
                     # あるなら表示
